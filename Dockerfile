@@ -48,7 +48,7 @@ RUN apt-get update && apt-get upgrade -y && \
     mediainfo \
     mercurial \
     net-tools \
-    netcat \
+    netcat-openbsd \
     openssh-client \
     p7zip-full \
     p7zip-rar \
@@ -95,29 +95,21 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
 # Python のインストール
-RUN apt-get update && apt-get install -y python3 python3-pip python3-dev \
+RUN apt-get update && apt-get install -y python3 python3-pip python3-dev python3-full python3-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache-dir pipx \
-    && pip3 install --no-cache-dir setuptools wheel
+    && python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir pipx setuptools wheel
+
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Node.js のインストール
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g npm@10.8.2 \
-    && npm install -g yarn@1.22.22 \
     && npm install -g n \
-    && n 20.19.1 \
-    && n 18.20.8 \
-    && n 22.15.0
-
-# Docker のインストール
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list \
-    && apt-get update \
-    && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && n 20 \
+    && n 22 \
+    && n prune
 
 # Java のインストール
 RUN apt-get update && apt-get install -y openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk openjdk-21-jdk \
@@ -142,24 +134,6 @@ RUN curl -fsSL https://golang.org/dl/go1.21.13.linux-amd64.tar.gz | tar -C /usr/
     && curl -fsSL https://golang.org/dl/go1.23.8.linux-amd64.tar.gz | tar -C /usr/local -xzf -
 
 ENV PATH=$PATH:/usr/local/go/bin
-
-# AWS CLI のインストール
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf aws awscliv2.zip
-
-# Azure CLI のインストール
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-
-# GitHub CLI のインストール
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt-get update \
-    && apt-get install -y gh \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # PostgreSQL のインストール
 RUN apt-get update && apt-get install -y postgresql postgresql-contrib \
@@ -187,21 +161,6 @@ RUN apt-get update && apt-get install -y php8.3 php8.3-cli php8.3-common php8.3-
 RUN apt-get update && apt-get install -y dotnet-sdk-8.0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# Webサーバーのインストール
-RUN apt-get update && apt-get install -y apache2 nginx \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Android SDKのインストール（一部のみ）
-RUN mkdir -p /usr/local/lib/android/sdk \
-    && wget -q https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O android-sdk.zip \
-    && unzip -q android-sdk.zip -d /usr/local/lib/android/sdk \
-    && rm android-sdk.zip
-
-ENV ANDROID_HOME=/usr/local/lib/android/sdk \
-    ANDROID_SDK_ROOT=/usr/local/lib/android/sdk \
-    PATH=$PATH:$ANDROID_HOME/cmdline-tools/bin:$ANDROID_HOME/platform-tools
 
 # Pythonの追加バージョンをインストール
 RUN apt-get update && apt-get install -y \
